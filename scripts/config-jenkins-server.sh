@@ -10,7 +10,7 @@ function getGDriveFile {
     ggURL='https://drive.google.com/uc?export=download'
     filename="$(curl -sc /tmp/gcokie "${ggURL}&id=${ggID}" | grep -o '="uc-name.*</span>' | sed 's/.*">//;s/<.a> .*//')"
     getcode="$(awk '/_warning_/ {print $NF}' /tmp/gcokie)"
-    curl -Lb /tmp/gcokie "${ggURL}&confirm=${getcode}&id=${ggID}" -o "${filename}"
+    curl -Lb /tmp/gcokie "${ggURL}&confirm=${getcode}&id=${ggID}" -o "${filename}" &>> $output
 }
 
 
@@ -42,24 +42,27 @@ then
     source /etc/profile
 
     # Install utils
-    sudo yum install -y wget git yum-utils 
+    sudo yum install -y wget git yum-utils &>> $output
 
     # Install Jenkins
-    sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+    sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo &>> $output
     sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
     sudo yum install -y jenkins &>> $output
 
     # Make sure Jenkins is stoped and configure it
-    sudo systemctl start jenkins.service
+    sudo systemctl stop jenkins.service
     getGDriveFile "https://drive.google.com/open?id=0Bwz6-3PXQynlakRFcHBwSlNOXzA"
     sudo tar -xzf $filename -C /
+    sudo chown -R jenkins:jenkins /var/lib/jenkins/*
+    # small hack to pass misconfiguration in jenkins authentication 
+    sudo sed -i 's/<useSecurity>true<\/useSecurity>/<useSecurity>false<\/useSecurity>/g' /var/lib/jenkins/config.xml
 
     # Start the Jenkins service and set it to run at boot time
     sudo systemctl start jenkins.service
     sudo systemctl enable jenkins.service
 
     # Install Artifactory
-    sudo wget https://bintray.com/jfrog/artifactory-rpms/rpm -O bintray-jfrog-artifactory-rpms.repo
+    sudo wget https://bintray.com/jfrog/artifactory-rpms/rpm -O bintray-jfrog-artifactory-rpms.repo &>> $output
     sudo mv bintray-jfrog-artifactory-rpms.repo /etc/yum.repos.d/
     sudo yum install -y jfrog-artifactory-oss &>> $output
 
@@ -77,7 +80,7 @@ fi
 #       Blue Ocean beta
 #       Maven Release Plug-in
 #
-# - TO check if Jenkins started correctly go to http://<file_server_ip>:8081/artifactory and follow the wizard
+# - TO check if Jenkins started correctly go to http://<file_server_ip>:8081/artifactory and follow the wizard, you just need the maven repo
 
 
 
