@@ -1,0 +1,8 @@
+########################################################################
+# Replace and uncomment any property here only if you need to override
+# any existing property in default/common_properties.yaml
+########################################################################
+
+network_adapter_name: "vboxnet0"
+
+file_server_ip: "192.168.56.12"
